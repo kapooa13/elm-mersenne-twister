@@ -75,7 +75,7 @@ generateRandomNumber lowerBound upperBound seed =
             }
             
         newState = 
-            Array.set 0 (round seed) (Array.slice 0 5 model.state)
+            Array.set 0 (round seed) model.state
 
         idxMapFunc : Int -> Int -> Int
         idxMapFunc idx num =
@@ -114,7 +114,7 @@ view : Model -> Html Msg
 view model =
     div [] 
         [ div [] [ text <| String.fromFloat model.randomNum ]
-        , button [ onClick (GenRand 42) ] [ text "GetRandomNum" ]
+        , button [ onClick (GenRand 2) ] [ text "GetRandomNum" ]
         ]
 
 main : Program () Model Msg
