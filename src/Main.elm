@@ -9,7 +9,7 @@ import Bitwise exposing (shiftRightBy, shiftLeftBy, and)
 type alias Model =
     { state : Array.Array Int
     , index : Int
-    , randomNum : Int
+    , randomNum : Float
     }
 
 init : Model
@@ -46,18 +46,6 @@ generateNumbers model =
     in
         { model | state = Array.indexedMap idxMapFunc model.state }
 
-pRandom : Float -> Float
-pRandom t =
-    if t <= 0 then
-        42
-    else
-        let
-            a = 
-                2000 * t
-                    |> String.fromFloat
-                    |> String.filter (== ".")
-
-        in
 
 extractNumbers : Model -> Model
 extractNumbers model =
@@ -65,23 +53,21 @@ extractNumbers model =
         newModel = if model.index == 0 then generateNumbers model else model
 
         y = (Array.get (newModel.index) newModel.state |> (Maybe.withDefault 0))
-        _ = Debug.log "y" y
         a = Bitwise.xor y (shiftRightBy 11 y)
-        _ = Debug.log "a" a
         b = Bitwise.xor a (Bitwise.and (shiftLeftBy 7 a) 2636928640)
-        _ = Debug.log "b" b
         c = Bitwise.xor b (Bitwise.and (shiftLeftBy 15 b) 4022730752)
-        _ = Debug.log "c" c
         d = Bitwise.xor c (shiftRightBy 18 y)
-        _ = Debug.log "d" d
 
         newidx = modBy 624 <| newModel.index + 1
     in
-        { newModel | index = newidx, randomNum = int32 d }
+        { newModel | index = newidx, randomNum = toFloat <| int32 d }
 
-generateRandomNumber : Float -> Int
-generateRandomNumber seed =
+generateRandomNumber : Float -> Float -> Float -> Float
+generateRandomNumber lowerBound upperBound seed =
     let
+        boundDiff = 
+            upperBound - lowerBound
+
         model =
             { state = Array.fromList <| List.indexedMap (\idx _ -> idx) <| List.repeat 624 0
             , index = 0
@@ -102,51 +88,33 @@ generateRandomNumber seed =
 
                     prevElem = 
                         Array.foldl foldFunc (0, round seed) (Array.indexedMap Tuple.pair <| Array.slice 1 idx newState)
-                            |> Debug.log "foldFunc"
                             |> Tuple.second
                 in
                     (1812433253 * (Bitwise.xor prevElem (Bitwise.shiftRightBy 30 prevElem) ) + idx )
                         |> int32
-                        |> Debug.log ("num" ++ String.fromInt idx)
             else
                 num
 
         newModel = 
             extractNumbers { model | state = (Array.indexedMap idxMapFunc newState), index = 0 }
     in
-        newModel.randomNum
+        lowerBound + toFloat (modBy (round boundDiff) (round newModel.randomNum))
 
 type Msg = 
-      GenerateRandomNum Int
-    | GenRand
+    GenRand Float   
 
 update : Msg -> Model -> Model
 update msg model =
     case msg of
-        GenerateRandomNum seed ->
-            let
-                newState = Array.toList <| Array.set 0 seed model.state
-                idxMapFunc : Int -> Int -> Int
-                idxMapFunc idx num =
-                    if idx /= 0 then
-                        let
-                            prevElem = 
-                                (Array.get (idx - 1) model.state |> (Maybe.withDefault 0))
-                        in
-                            int32 <| (1812433253 * (Bitwise.xor prevElem (Bitwise.shiftRightBy 30 prevElem) ) + idx )
-                    else
-                        num
-            in
-                extractNumbers { model | state = Array.indexedMap idxMapFunc model.state, index = 0 }
-        GenRand ->
-            { model | randomNum = generateRandomNumber 1 }
+        GenRand seed ->
+            { model | randomNum = generateRandomNumber (-2^31) (2^31 - 1) seed }
 
 
 view : Model -> Html Msg
 view model =
     div [] 
-        [ div [] [ text <| String.fromInt model.randomNum ]
-        , button [ onClick GenRand ] [ text "GetRandomNum" ]
+        [ div [] [ text <| String.fromFloat model.randomNum ]
+        , button [ onClick (GenRand 42) ] [ text "GetRandomNum" ]
         ]
 
 main : Program () Model Msg
@@ -156,36 +124,3 @@ main =
         , view = view
         , update = update
         }
-
-{-
-int[0..623] MT
-int index = 0
-function initialize_generator(int seed) {
-    i := 0
-    MT[0] := seed 
-    for i from 1 to 623 {
-        MT[i] := last 32 bits of(1812433253 * (MT[i-1] xor (right shift by 30 bits(MT[i-1]))) + i)
-    }
-}
- 
-function extract_number() {
-    if index == 0 {
-        generate_numbers()
-    }
-    int y := MT[index]
-    y := y xor (right shift by 11 bits(y))
-    y := y xor (left shift by 7 bits(y) and (2636928640))
-    y := y xor (left shift by 15 bits(y) and (4022730752))
-    y := y xor (right shift by 18 bits(y))
-    index := (index + 1) mod 624      return y
-}
-function generate_numbers() {
-    for i from 0 to 623 {
-        int y := (MT[i] & 0x80000000) + (MT[(i+1) mod 624] & 0x7fffffff)
-        MT[i] := MT[(i + 397) mod 624] xor (right shift by 1 bit(y))
-        if (y mod 2) != 0 {
-            MT[i] := MT[i] xor (2567483615)
-        }
-    }
-}
--}
