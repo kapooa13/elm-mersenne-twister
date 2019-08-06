@@ -9,4 +9,8 @@ This project was made for the purpose of helping kids utilise PRNG in Elm, witho
 
 ## Future work
 
-This project was created with the intention of being utilised for the Outreach program in McMaster, now called McMaster Start Coding, and will hopefully be integrated into their program at some point. To learn more about them, see: outreach.mcmaster.ca.
+This project was created with the intention of being utilised for the Outreach program in McMaster, now called McMaster Start Coding, and will hopefully be integrated into their program at some point. From their website:
+
+>At Software: Tool For Change, we provide elementary and middle school students with a fun and safe environment to learn code. We incorporate mathematical concepts such as the cartesian coordinate system and trigonometry. We have seen students understand things that they have learned in class better by playing with the tools we have provided.
+
+To learn more about them, see: http://outreach.mcmaster.ca.
